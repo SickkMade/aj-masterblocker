@@ -3,13 +3,15 @@ import pyautogui
 from colorchanger import colorchanger
 import time
 import numpy as np
+import random
 
 class mover():
     def __init__(self, file):
         self.voxel_data = filetoarray.layer_based_voxel_data(file)
         self._color_data = filetoarray.get_color_data(file)
         self._location = (0,0,0)
-        pyautogui.PAUSE = 0.035
+        self._pause = 0.039
+        pyautogui.PAUSE = self._pause
         self._shape = filetoarray.get_size(file)
 
 
@@ -22,15 +24,23 @@ class mover():
                     loc = (z, y, x)
                     if data != 0 and self.is_edge(loc):
                         if data not in organized:
-                            organized[data] = [loc]
+                            organized[data] = {}
                         else:
-                            organized[data].append(loc)
+                            if z not in organized[data]:
+                                organized[data][z] = [loc]
+                            else:
+                                if z % 2 == 1: #every other row we put in reverse so cursor doesnt have to go all the way back to start
+                                    organized[data][z].insert(0, loc)
+                                else:
+                                    organized[data][z].append(loc)
                 
         for key in organized:
             self._color(key)
-            for value in organized[key]:
-                value = (value[0] - self._shape[0] // 2, value[1] - self._shape[1] //2 , value[2])
-                self._move(value)
+            for second_key in organized[key]: # for every new layer
+                pyautogui.move(random.randrange(-10,10), 0)
+                for value in organized[key][second_key]:
+                    value = (value[0] - self._shape[0] // 2, value[1] - self._shape[1] //2 , value[2])
+                    self._move(value)
     
     def _color(self, index):
         target_rgb = self._color_data[index]
@@ -85,5 +95,3 @@ class mover():
                 if self.voxel_data[nx][ny][nz] == 0: #if one size has air around it it will be drawn
                     return True
         return False
-                
-        
