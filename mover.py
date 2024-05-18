@@ -2,15 +2,15 @@ from filetoarray import filetoarray
 import pyautogui
 from colorchanger import colorchanger
 import time
+import pyscreeze
 import numpy as np
-import random
 
 class mover():
     def __init__(self, file):
         self.voxel_data = filetoarray.layer_based_voxel_data(file)
         self._color_data = filetoarray.get_color_data(file)
         self._location = (0,0,0)
-        self._pause = 0.039
+        self._pause = 0.05
         pyautogui.PAUSE = self._pause
         self._shape = filetoarray.get_size(file)
 
@@ -37,10 +37,11 @@ class mover():
         for key in organized:
             self._color(key)
             for second_key in organized[key]: # for every new layer
-                pyautogui.move(random.randrange(-10,10), 0)
+                self._check_timeout()
                 for value in organized[key][second_key]:
                     value = (value[0] - self._shape[0] // 2, value[1] - self._shape[1] //2 , value[2])
                     self._move(value)
+        self._save()
     
     def _color(self, index):
         target_rgb = self._color_data[index]
@@ -54,6 +55,7 @@ class mover():
         pyautogui.click(*click_loc) #shut up
         time.sleep(1)
         pyautogui.press('p')
+        time.sleep(1)
 
     def _move(self, location):
         move_to = tuple(map(lambda i, j: i - j, self._location, location))
@@ -64,7 +66,9 @@ class mover():
             self._move_dir(y, 1)
         for _ in range(abs(z)):
             self._move_dir(z, 2)
+        time.sleep(0.01)
         pyautogui.press('space')
+        
         self._location = location
 
     def _move_dir(self, direction, axis): #0 is x, 1 is y, 2 is z
@@ -95,3 +99,21 @@ class mover():
                 if self.voxel_data[nx][ny][nz] == 0: #if one size has air around it it will be drawn
                     return True
         return False
+
+    def _save(self):
+        location = pyscreeze.locateCenterOnScreen('images/save.png', confidence=0.7)
+        pyautogui.click(location)
+        time.sleep(0.3)
+        location = pyscreeze.locateCenterOnScreen('images/add.png', confidence=0.7)
+        pyautogui.click(location)
+        time.sleep(0.3)
+        location = pyscreeze.locateCenterOnScreen('images/okay.png', confidence=0.7)
+        pyautogui.click(location)
+
+    def _check_timeout(self):
+        try:
+            location = pyscreeze.locateCenterOnScreen('images/timeout.png', confidence = 0.9)
+            pyautogui.click(location)
+            time.sleep(0.2)
+        except pyscreeze.ImageNotFoundException:
+            pass
